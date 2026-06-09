@@ -1,0 +1,17 @@
+../Core/Src/font.c:12893:6:botton_init	4	static
+../Core/Src/font.c:12909:9:Leer_Botones	4	static
+../Core/Src/font.c:12918:6:ILI9488_SendCommand	16	static
+../Core/Src/font.c:12925:6:ILI9488_SendData	16	static
+../Core/Src/font.c:12932:6:ILI9488_Init	8	static
+../Core/Src/font.c:12959:6:ILI9488_FillScreen	24	static
+../Core/Src/font.c:12981:6:ILI9488_FillRect	40	static
+../Core/Src/font.c:13007:6:ILI9488_DrawImage	48	static
+../Core/Src/font.c:13037:6:ILI9488_DrawColorBars	32	static
+../Core/Src/font.c:13051:6:ILI9488_DrawChar	48	static
+../Core/Src/font.c:13070:6:ILI9488_DrawString	56	static
+../Core/Src/font.c:13081:6:Helios_DrawDashboard_Static	32	static
+../Core/Src/font.c:13112:6:Helios_UpdateTelemetry	96	static
+../Core/Src/font.c:13226:6:Helios_Draw_Intermitente	40	static
+../Core/Src/font.c:13246:6:Helios_DrawRules_Static	32	static
+../Core/Src/font.c:13282:6:FDCAN_BareMetal_Init	4	static
+../Core/Src/font.c:13309:6:FDCAN_CheckAndReceive	32	static

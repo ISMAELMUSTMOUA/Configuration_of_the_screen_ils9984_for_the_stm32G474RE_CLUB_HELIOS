@@ -1,0 +1,17 @@
+../Core/Src/font.c:12893:6:botton_init	1
+../Core/Src/font.c:12909:9:Leer_Botones	5
+../Core/Src/font.c:12918:6:ILI9488_SendCommand	1
+../Core/Src/font.c:12925:6:ILI9488_SendData	1
+../Core/Src/font.c:12932:6:ILI9488_Init	1
+../Core/Src/font.c:12959:6:ILI9488_FillScreen	2
+../Core/Src/font.c:12981:6:ILI9488_FillRect	2
+../Core/Src/font.c:13007:6:ILI9488_DrawImage	2
+../Core/Src/font.c:13037:6:ILI9488_DrawColorBars	1
+../Core/Src/font.c:13051:6:ILI9488_DrawChar	11
+../Core/Src/font.c:13070:6:ILI9488_DrawString	2
+../Core/Src/font.c:13081:6:Helios_DrawDashboard_Static	1
+../Core/Src/font.c:13112:6:Helios_UpdateTelemetry	19
+../Core/Src/font.c:13226:6:Helios_Draw_Intermitente	3
+../Core/Src/font.c:13246:6:Helios_DrawRules_Static	1
+../Core/Src/font.c:13282:6:FDCAN_BareMetal_Init	3
+../Core/Src/font.c:13309:6:FDCAN_CheckAndReceive	4
