@@ -129,7 +129,7 @@ int main(void)
     HAL_Delay(3000);
 
 
-	  // Variables de simulación para la prueba
+	   // Variables de simulación para la prueba
 	        int velocidad_falsa = 60;
 	        uint8_t modo_eco = 1;
 	        int bateria_falsa = 100;
@@ -141,9 +141,14 @@ int main(void)
 	        float amp_falso = 12.5;  // Consumo corriente
 	        int eta_horas = 3;       // Tiempo restante estimado
 	        int eta_minutos = 45;
-	//Variables genericas
-	uint8_t boton_anterior = 0;
-	uint32_t ultimo_tiempo = 0;
+	   //Variables genericas
+			uint8_t boton_anterior = 0;
+			uint32_t ultimo_tiempo = 0;
+			uint8_t inter_izq = 0;       // 1 = Izquierdo encendido
+			uint8_t inter_der = 0;       // 1 = Derecho encendido
+			uint8_t emergencia = 0;      // 1 = Warning encendido
+			uint32_t ultimo_tiempo_luces = 0; // Cronómetro independiente para parpadeo
+			uint8_t estado_luz = 0;           // Alterna entre 0 (negro) y 1 (verde)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
@@ -154,85 +159,113 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  // ================================================================
-	        // 1. LEER BOTONES A MÁXIMA VELOCIDAD (Millones de veces por segundo)
-	        // ================================================================
-	        uint8_t boton_actual = Leer_Botones();
+	  // 1. LEER BOTONES (Con detección de flanco/pulsación única)
+	  // ================================================================
+	      uint8_t boton_actual = Leer_Botones();
 
-	        if (boton_actual != 0 && boton_anterior == 0) {
-	            switch (boton_actual) {
-	                case 1:
-	                    if (estado_pantalla == 0) { estado_pantalla = 1; }
-	                    else { estado_pantalla = 0; }
-	                    actualizar_pantalla = 1;
-	                    break;
-	                case 2:
-	                    if (modo_eco == 1) { modo_eco = 0; } else { modo_eco = 1; }
-	                    break;
-	                case 3:
-	                    eta_horas = 3; eta_minutos = 0;
-	                    break;
-	                case 4:
-	                    break;
-	            }
-	        }
-	        boton_anterior = boton_actual;
+	      if (boton_actual != 0 && boton_anterior == 0) {
+	          switch (boton_actual) {
+	              case 1: // BOTÓN 1: Cambiar Pantalla (Lo dejamos igual)
+	                  if (estado_pantalla == 0) { estado_pantalla = 1; }
+	                  else { estado_pantalla = 0; }
+	                  actualizar_pantalla = 1;
+	                  break;
 
-	        // ================================================================
-	        // 2. GESTIÓN INMEDIATA DE PANTALLAS (Respuesta instantánea)
-	        // ================================================================
-	        if (actualizar_pantalla == 1) {
-	            if (estado_pantalla == 0) {
-	                Helios_DrawDashboard_Static();
-	                // Forzamos pintar los números al instante para que no salga vacío
-	                Helios_UpdateTelemetry(velocidad_falsa, bateria_falsa, modo_eco,
-	                                       temp_falsa, pre_falsa, rpm_falsas,
-	                                       volt_falso, amp_falso, eta_horas, eta_minutos, 1);
-	            } else if (estado_pantalla == 1) {
-	                Helios_DrawRules_Static();
-	            }
-	            actualizar_pantalla = 0;
-	        }
+	              case 2: // BOTÓN 2: Intermitente Izquierdo
+	                  inter_izq = !inter_izq; // Alternar
+	                  inter_der = 0;          // Apagar el derecho por seguridad
+	                  emergencia = 0;         // Apagar emergencia
+	                  // Borrar ambos en pantalla para que no se queden "pillados"
+	                  Helios_Draw_Intermitente(0, 0);
+	                  Helios_Draw_Intermitente(1, 0);
+	                  break;
 
-	        // ================================================================
-	        // 3. TAREAS PESADAS (Sensores y Refresco): SOLO CADA 500ms
-	        // ================================================================
-	        // Si el reloj actual menos el último tiempo guardado es mayor a 500ms...
+	              case 3: // BOTÓN 3: Intermitente Derecho
+	                  inter_der = !inter_der;
+	                  inter_izq = 0;
+	                  emergencia = 0;
+	                  Helios_Draw_Intermitente(0, 0);
+	                  Helios_Draw_Intermitente(1, 0);
+	                  break;
 
-	        if (HAL_GetTick() - ultimo_tiempo >= 500) {
+	              case 4: // BOTÓN 4: Luces de Emergencia (Warning)
+	                  emergencia = !emergencia;
+	                  inter_izq = 0;
+	                  inter_der = 0;
+	                  Helios_Draw_Intermitente(0, 0);
+	                  Helios_Draw_Intermitente(1, 0);
+	                  break;
+	          }
+	      }
+	      boton_anterior = boton_actual;
 
-	            ultimo_tiempo = HAL_GetTick(); // Reseteamos el cronómetro
+	      // ================================================================
+	      // 2. GESTIÓN INMEDIATA DE PANTALLAS (Tu código original)
+	      // ================================================================
+	      if (actualizar_pantalla == 1) {
+	          if (estado_pantalla == 0) {
+	              Helios_DrawDashboard_Static();
+	              Helios_UpdateTelemetry(velocidad_falsa, bateria_falsa, modo_eco,
+	                                     temp_falsa, pre_falsa, rpm_falsas,
+	                                     volt_falso, amp_falso, eta_horas, eta_minutos, 1);
+	          } else if (estado_pantalla == 1) {
+	              Helios_DrawRules_Static();
+	          }
+	          actualizar_pantalla = 0;
+	      }
 
-	            // A. Simulamos los sensores
-	            velocidad_falsa++;
-	            if (velocidad_falsa > 99) velocidad_falsa = 40;
-	            rpm_falsas = velocidad_falsa * 60;
+	      // ================================================================
+	      // 3. TAREAS PESADAS (Sensores y Refresco): SOLO CADA 500ms
+	      // ================================================================
+	      if (HAL_GetTick() - ultimo_tiempo >= 500) {
+	          ultimo_tiempo = HAL_GetTick();
 
-	            if (velocidad_falsa % 2 == 0) {
-	                bateria_falsa--;
-	                volt_falso -= 0.1;
-	                if (bateria_falsa < 0) { bateria_falsa = 100; volt_falso = 54.0; }
-	            }
-	            amp_falso = 10.0 + (velocidad_falsa / 10.0);
-	            temp_falsa++;
-	            if (temp_falsa > 85) temp_falsa = 70;
+	          // Simulamos los sensores (Tu código original)
+	          velocidad_falsa++;
+	          if (velocidad_falsa > 99) velocidad_falsa = 40;
+	          rpm_falsas = velocidad_falsa * 60;
+	          if (velocidad_falsa % 2 == 0) {
+	              bateria_falsa--; volt_falso -= 0.1;
+	              if (bateria_falsa < 0) { bateria_falsa = 100; volt_falso = 54.0; }
+	          }
+	          amp_falso = 10.0 + (velocidad_falsa / 10.0);
+	          temp_falsa++;
+	          if (temp_falsa > 85) temp_falsa = 70;
+	          eta_minutos--;
+	          if (eta_minutos < 0) {
+	              eta_minutos = 59; eta_horas--;
+	              if (eta_horas < 0) eta_horas = 3;
+	          }
 
-	            eta_minutos--;
-	            if (eta_minutos < 0) {
-	                eta_minutos = 59; eta_horas--;
-	                if (eta_horas < 0) eta_horas = 3;
-	            }
+	          // Actualizamos la pantalla (Solo si estamos en el Dashboard)
+	          if (estado_pantalla == 0 && actualizar_pantalla == 0) {
+	              Helios_UpdateTelemetry(velocidad_falsa, bateria_falsa, modo_eco,
+	                                     temp_falsa, pre_falsa, rpm_falsas,
+	                                     volt_falso, amp_falso, eta_horas, eta_minutos, 0);
+	          }
+	      }
 
+	      // ================================================================
+	      // 4. PARPADEO DE INTERMITENTES (Cronómetro Independiente)
+	      // ================================================================
+	      // Usamos otra variable de tiempo para no interferir con los sensores
+	      if (HAL_GetTick() - ultimo_tiempo_luces >= 400) { // 400ms hace que parpadee más rápido que los datos
+	          ultimo_tiempo_luces = HAL_GetTick();
+	          estado_luz = !estado_luz; // Cambia entre encendido(1) y apagado(0)
 
-	            // B. Actualizamos la pantalla (Solo si estamos en el Dashboard)
-	            if (estado_pantalla == 0 && actualizar_pantalla == 0) {
-	                Helios_UpdateTelemetry(velocidad_falsa, bateria_falsa, modo_eco,
-	                                       temp_falsa, pre_falsa, rpm_falsas,
-	                                       volt_falso, amp_falso, eta_horas, eta_minutos, 0);
-	            }
-	        }
-
-	        // ¡NO HAY HAL_Delay(500) AQUÍ! El bucle sigue girando a la velocidad de la luz.
-
+	          // Solo dibujamos si estamos en la pantalla del Dashboard (estado_pantalla == 0)
+	          // No queremos dibujar luces verdes encima de las reglas del iESC
+	          if (estado_pantalla == 0 && actualizar_pantalla == 0) {
+	              if (emergencia) {
+	                  Helios_Draw_Intermitente(0, estado_luz);
+	                  Helios_Draw_Intermitente(1, estado_luz);
+	              }
+	              else {
+	                  if (inter_izq) Helios_Draw_Intermitente(0, estado_luz);
+	                  if (inter_der) Helios_Draw_Intermitente(1, estado_luz);
+	              }
+	          }
+	      }
   }
   /* USER CODE END 3 */
 }
